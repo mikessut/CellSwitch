@@ -1,4 +1,5 @@
 #include <SoftwareSerial.h>
+#include "Buffer.h"
 
 
 
@@ -6,20 +7,29 @@ SoftwareSerial cell(7,8);  //Create a 'fake' serial port. Pin 2 is the Rx pin, p
 
 int onModulePin= 9;
 
-#define BUF_LEN 100
-char buffer[BUF_LEN+1];  // leave room for \0
-int16_t bufPtr = -1;
+
+
+
+
+
+//char buffer[BUF_LEN+1];  // leave room for \0
+//int16_t bufPtr = -1;
+
+Buffer buf;
 
 void setup() {
+
 
   Serial.begin(9600);
   cell.begin(9600);
 
   Serial.println(F("Starting CellSwitch"));
 
-  memset(buffer, '\0', BUF_LEN+1);    // Initialice the string
 
-  Serial.println(buffer);
+  //memset(buffer, '\0', BUF_LEN+1);    // Initialice the string
+  buf = Buffer();
+
+  //Serial.println(buffer);
   //Serial.println(F("Powering on cell"));
   //power_on();
 
@@ -31,25 +41,22 @@ void loop() {
   char *p;
 
   if (Serial.available() > 0 ) {
-    pushBuf(Serial.read());
+    buf.pushBuf(Serial.read());
     //Serial.println(buffer);
   }
 
-  if ((p = strstr(buffer,"+CMTI:\"SM\",")) != NULL ) {
-
-    // shift out of buffer
-    shiftBuffer((p-buffer)+11);
+  if (buf.matchShift("+CMTI:\"SM\",")) {
 
     // now read until we have \r\n
-    while ( (p = strstr(buffer,"\r\n")) == NULL) {
+    while (!buf.matchCRLF() ) {
 	if (Serial.available() > 0 ) 
-	  pushBuf(Serial.read());
+	  buf.pushBuf(Serial.read());
     }
 
     uint8_t msgID;
     char tmp[10];
-    Serial.println(buffer);
-    sscanf(buffer,"%d",&msgID);
+    Serial.println(buf.getStr());
+    sscanf(buf.getStr(),"%d",&msgID);
 
     Serial.println("SMS received!");
     sprintf(tmp,"id: %d",msgID);
@@ -57,30 +64,6 @@ void loop() {
   }
 }
 
-void pushBuf(char c) {
-
-  bufPtr++;
-  if (bufPtr == BUF_LEN) {
-    // copy everything over a position
-    shiftBuffer();    
-  }
-  buffer[bufPtr] = c; 
-}
-
-void shiftBuffer(int x) {
-  for (int i=0; i < x; i++)
-    shiftBuffer();
-}
-
-void shiftBuffer() {
-  // always stays null terminated
-  if (bufPtr >= 0 ) {
-    for (int i = 1; i < BUF_LEN+1; i++) {
-      buffer[i-1] = buffer[i];
-    }
-    bufPtr--;
-  }
-}
 
 void power_on(){
 
@@ -138,3 +121,5 @@ int8_t sendATcommand(char* ATcommand, char* expected_answer, unsigned int timeou
 
     return answer;
 }
+
+
