@@ -2,9 +2,11 @@
 
 #include "Buffer.h"
 
-Buffer::Buffer() {
+Buffer::Buffer(Stream *ser) {
   memset(buffer,'\0',BUF_LEN+1);
   bufPtr = -1;
+
+  this->ser = ser;
 }
 
 void Buffer::pushBuf(char c) {
@@ -52,5 +54,13 @@ bool Buffer::matchShift(char *str) {
 char* Buffer::matchCRLF() {
   return strstr(buffer,"\r\n");
 
+}
+
+bool Buffer::read() {
+  if (ser->available() > 0 ) {
+    pushBuf(ser->read());
+    return true;
+  }
+  return false;
 }
 

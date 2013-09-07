@@ -6,6 +6,7 @@
 SoftwareSerial cell(7,8);  //Create a 'fake' serial port. Pin 2 is the Rx pin, pin 3 is the Tx pin.
 
 int onModulePin= 9;
+int switchPin = 10;
 
 
 
@@ -15,7 +16,8 @@ int onModulePin= 9;
 //char buffer[BUF_LEN+1];  // leave room for \0
 //int16_t bufPtr = -1;
 
-Buffer buf;
+Buffer buf(&Serial);
+//Buffer buf(&cell);
 
 void setup() {
 
@@ -25,9 +27,11 @@ void setup() {
 
   Serial.println(F("Starting CellSwitch"));
 
+  pinMode(switchPin,OUTPUT);
+  digitalWrite(switchPin,HIGH);
 
   //memset(buffer, '\0', BUF_LEN+1);    // Initialice the string
-  buf = Buffer();
+  //buf = Buffer(Serial);
 
   //Serial.println(buffer);
   //Serial.println(F("Powering on cell"));
@@ -40,17 +44,18 @@ void loop() {
 
   char *p;
 
-  if (Serial.available() > 0 ) {
-    buf.pushBuf(Serial.read());
+  //  if (Serial.available() > 0 ) {
+  //buf.pushBuf(Serial.read());
     //Serial.println(buffer);
-  }
+  //}
+
+  buf.read();
 
   if (buf.matchShift("+CMTI:\"SM\",")) {
 
     // now read until we have \r\n
     while (!buf.matchCRLF() ) {
-	if (Serial.available() > 0 ) 
-	  buf.pushBuf(Serial.read());
+      buf.read();
     }
 
     uint8_t msgID;
@@ -61,6 +66,12 @@ void loop() {
     Serial.println("SMS received!");
     sprintf(tmp,"id: %d",msgID);
     Serial.println(tmp);
+  } else if (buf.matchShift("ON")) {
+    digitalWrite(switchPin,LOW);
+    Serial.println("ON CMD");
+  } else if (buf.matchShift("OFF")) {
+    digitalWrite(switchPin,HIGH);
+    Serial.println("OFF CMD");
   }
 }
 

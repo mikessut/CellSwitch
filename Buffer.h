@@ -1,11 +1,13 @@
 #include <string.h>
+//#include <HardwareSerial.h>
+#include <Stream.h>
 
 #define BUF_LEN 100
 
 class Buffer {
 public:
 
-  Buffer();
+  Buffer(Stream *ser);
 
   void pushBuf(char c);
 
@@ -18,9 +20,12 @@ public:
 
   char* matchCRLF(); 
 
+  bool read() ;
+
 private:
   char buffer[BUF_LEN+1];
   int bufPtr;
+  Stream *ser;
 
 
 };
