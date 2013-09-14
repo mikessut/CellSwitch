@@ -1,4 +1,4 @@
-
+#include <HardwareSerial.h>
 
 #include "Buffer.h"
 
@@ -53,12 +53,21 @@ bool Buffer::matchShift(char *str) {
   char * p;
 
   if ( (p = strstr(buffer,str)) != NULL ) {
+    Serial.println(F("matchShift"));
+    Serial.println(buffer);
     shiftBuffer((p-buffer) + strlen(str));
     return true;
   } else {
     return false;
   }
 
+}
+
+bool Buffer::match(char *str) {
+  if (strstr(buffer,str) != NULL)
+    return true;
+  else
+    return false;
 }
 
 int Buffer::matchCRLF() {

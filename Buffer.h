@@ -17,6 +17,7 @@ public:
   char * getStr();
 
   bool matchShift(char *str);
+  bool match(char *str);
 
   int matchCRLF(); 
 

@@ -1,5 +1,6 @@
 #include <SoftwareSerial.h>
 #include "Buffer.h"
+//#include <string.h>
 
 
 
@@ -60,25 +61,41 @@ void loop() {
   if (buf.matchShift("+CMTI: \"SM\",")) {
 
     // now read until we have \r\n
-    while (!buf.matchCRLF() ) {
+    while (buf.matchCRLF() < 0) {
       buf.read();
     }
 
     uint8_t msgID;
-    char tmp[10];
+    char tmp[30];
     Serial.println(buf.getStr());
     sscanf(buf.getStr(),"%d",&msgID);
 
     Serial.println("SMS received!");
     sprintf(tmp,"id: %d",msgID);
     Serial.println(tmp);
+    
+    readSMS(msgID,tmp,30);
+    if (strcmp(tmp,"On") == 0) {
+      turnOn();
+    } else if (strcmp(tmp,"Off") == 0) {
+      turnOff();
+    }
+
   } else if (buf.matchShift("ON")) {
-    digitalWrite(switchPin,LOW);
-    Serial.println("ON CMD");
+    turnOn();
   } else if (buf.matchShift("OFF")) {
-    digitalWrite(switchPin,HIGH);
-    Serial.println("OFF CMD");
+    turnOff();
   }
+}
+
+void turnOn() {
+  digitalWrite(switchPin,LOW);
+  Serial.println("ON CMD");
+}
+
+void turnOff() {
+  digitalWrite(switchPin,HIGH);
+  Serial.println("OFF CMD");
 }
 
 void readSMS(int num, char * b, int maxLen) {
@@ -94,13 +111,12 @@ void readSMS(int num, char * b, int maxLen) {
 
   // read echo of commandread until \r\n and shift out
 
-  while ( !buf.matchShift("\r\n\r\n") ) {
-  //while (buf.len() < 3) {
+  while ( !buf.match("\r\n\r\n") ) {
     buf.read();
   }
 
-  Serial.println("0");
-  //Serial.println(buf.getStr());
+  //Serial.println("0");
+  Serial.println(buf.getStr());
   buf.empty();
 
   // read SMS reader (do nothing iwth it for now?)
@@ -110,7 +126,7 @@ void readSMS(int num, char * b, int maxLen) {
     buf.read();
   }
 
-  Serial.println("1");
+  //Serial.println("1");
   Serial.println(buf.getStr());
   buf.empty();
 
@@ -120,13 +136,13 @@ void readSMS(int num, char * b, int maxLen) {
     buf.read();
   }
 
-  Serial.println("2");
+  //Serial.println("2");
   Serial.println(buf.getStr());
 
-  for (j=0; (j < i) && (j < maxLen); j++) {
+  for (j=0; (j < i-2) && (j < maxLen); j++) {  // disregard the last two chars (\r\n)
     b[j] = buf.getChar(j);
   }
-  b[i] = '\0';
+  b[i-2] = '\0';
 
 
 }
@@ -149,6 +165,9 @@ void power_on(){
             answer = sendATcommand("AT", "OK", 2000);    
         }
     }
+
+    while( (sendATcommand("AT+CREG?", "+CREG: 0,1", 500) || 
+	  sendATcommand("AT+CREG?", "+CREG: 0,5", 500)) == 0 );
     
     sendATcommand("AT+CMGF=1","OK",5000);  // put SMS into text mode
 }
