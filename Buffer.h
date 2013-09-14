@@ -18,9 +18,18 @@ public:
 
   bool matchShift(char *str);
 
-  char* matchCRLF(); 
+  int matchCRLF(); 
 
   bool read() ;
+
+  void empty();
+
+  char getChar(int);
+
+  void println(char*);
+  int len();
+
+  void flushStream();
 
 private:
   char buffer[BUF_LEN+1];

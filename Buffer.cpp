@@ -3,10 +3,16 @@
 #include "Buffer.h"
 
 Buffer::Buffer(Stream *ser) {
+  empty();
+  //bufPtr = -1;
+
+  this->ser = ser;
+}
+
+void Buffer::empty() {
   memset(buffer,'\0',BUF_LEN+1);
   bufPtr = -1;
 
-  this->ser = ser;
 }
 
 void Buffer::pushBuf(char c) {
@@ -16,7 +22,11 @@ void Buffer::pushBuf(char c) {
     // copy everything over a position
     shiftBuffer();    
   }
-  buffer[bufPtr] = c; 
+  if ( c != '\0' ) {
+    buffer[bufPtr] = c; 
+  } else {
+    buffer[bufPtr] = '-'; 
+  }
 }
 
 void Buffer::shiftBuffer(int x) {
@@ -51,8 +61,13 @@ bool Buffer::matchShift(char *str) {
 
 }
 
-char* Buffer::matchCRLF() {
-  return strstr(buffer,"\r\n");
+int Buffer::matchCRLF() {
+  char *p;
+  p = strstr(buffer,"\r\n") ;
+  if (p != NULL)
+    return p-buffer+2;
+  else
+    return -1;
 
 }
 
@@ -64,3 +79,25 @@ bool Buffer::read() {
   return false;
 }
 
+
+char Buffer::getChar(int i) {
+  if (i < BUF_LEN ) {
+    return buffer[i];
+  } else {
+    return NULL;
+  }
+}
+
+void Buffer::println(char* str) {
+  ser->println(str);
+}
+
+int Buffer::len() {
+  return bufPtr+1;
+}
+
+void Buffer::flushStream() {
+  while( ser->available() > 0 ) {
+    ser->read();
+  }
+}
